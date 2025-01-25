@@ -1,42 +1,42 @@
-name: Build for aarch64
+name: Build for Multiple Platforms
 
 on:
   push:
     branches:
       - main
+  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
+    strategy:
+      matrix:
+        target:
+          - aarch64-unknown-linux-gnu  # ARM 64-bit Linux
+          - x86_64-unknown-linux-gnu   # 64-bit Linux
+          - x86_64-pc-windows-gnu      # 64-bit Windows
+          - x86_64-apple-darwin        # 64-bit macOS
+
     steps:
-    - name: Checkout code
+    - name: Checkout Code
       uses: actions/checkout@v3
 
-    - name: Install dependencies
-      run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
-
-    - name: Set up Rust
+    - name: Install Rust
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         toolchain: stable
         override: true
 
-    - name: Add aarch64 target
-      run: rustup target add aarch64-unknown-linux-gnu
+    - name: Add Targets
+      run: rustup target add ${{ matrix.target }}
 
-    - name: Configure Cargo
-      run: |
-        mkdir -p .cargo
-        echo '[target.aarch64-unknown-linux-gnu]' >> .cargo/config
-        echo 'linker = "aarch64-linux-gnu-gcc"' >> .cargo/config
+    - name: Build Binary
+      run: cargo build --target ${{ matrix.target }} --release
 
-    - name: Build for aarch64
-      run: cargo build --target aarch64-unknown-linux-gnu --release
-
-    - name: Upload binary
+    - name: Upload Binary Artifact
       uses: actions/upload-artifact@v3
       with:
-        name: taskbuddy-aarch64
-        path: target/aarch64-unknown-linux-gnu/release/taskbuddy
+        name: ${{ matrix.target }}-binary
+        path: target/${{ matrix.target }}/release/taskbuddy
