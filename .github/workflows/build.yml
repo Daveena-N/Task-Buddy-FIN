@@ -1,0 +1,35 @@
+name: Build and Cross-Compile TaskBuddy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+
+    - name: Add cross-compilation targets
+      run: rustup target add aarch64-unknown-linux-gnu
+
+    - name: Install dependencies
+      run: sudo apt-get install -y gcc-aarch64-linux-gnu
+
+    - name: Build for aarch64
+      run: cargo build --target aarch64-unknown-linux-gnu --release
+
+    - name: Upload binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: taskbuddy-aarch64
+        path: target/aarch64-unknown-linux-gnu/release/taskbuddy
