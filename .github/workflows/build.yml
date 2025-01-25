@@ -13,10 +13,10 @@ jobs:
     strategy:
       matrix:
         target:
-          - aarch64-unknown-linux-gnu  # ARM 64-bit Linux
-          - x86_64-unknown-linux-gnu   # 64-bit Linux
-          - x86_64-pc-windows-gnu      # 64-bit Windows
-          - x86_64-apple-darwin        # 64-bit macOS
+          - aarch64-unknown-linux-gnu
+          - x86_64-unknown-linux-gnu
+          - x86_64-pc-windows-gnu
+          - x86_64-apple-darwin
 
     steps:
     - name: Checkout Code
@@ -29,8 +29,18 @@ jobs:
         toolchain: stable
         override: true
 
-    - name: Add Targets
+    - name: Add Target
       run: rustup target add ${{ matrix.target }}
+
+    - name: Install Cross-Compilation Tools
+      run: |
+        if [[ ${{ matrix.target }} == "aarch64-unknown-linux-gnu" ]]; then
+          sudo apt-get install gcc-aarch64-linux-gnu -y
+        elif [[ ${{ matrix.target }} == "x86_64-pc-windows-gnu" ]]; then
+          sudo apt-get install mingw-w64 -y
+        elif [[ ${{ matrix.target }} == "x86_64-apple-darwin" ]]; then
+          sudo apt-get install osxcross -y
+        fi
 
     - name: Build Binary
       run: cargo build --target ${{ matrix.target }} --release
