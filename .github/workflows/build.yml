@@ -4,31 +4,39 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
+    - name: Checkout code
+      uses: actions/checkout@v3
 
-      - name: Set up Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          profile: minimal
-          toolchain: stable
-          override: true
-          components: rustfmt
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
 
-      - name: Add aarch64 target
-        run: rustup target add aarch64-unknown-linux-gnu
+    - name: Set up Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
 
-      - name: Install dependencies
-        run: sudo apt-get install -y gcc-aarch64-linux-gnu
+    - name: Add aarch64 target
+      run: rustup target add aarch64-unknown-linux-gnu
 
-      - name: Build for aarch64
-        run: cargo build --target aarch64-unknown-linux-gnu --release
+    - name: Configure Cargo
+      run: |
+        mkdir -p .cargo
+        echo '[target.aarch64-unknown-linux-gnu]' >> .cargo/config
+        echo 'linker = "aarch64-linux-gnu-gcc"' >> .cargo/config
+
+    - name: Build for aarch64
+      run: cargo build --target aarch64-unknown-linux-gnu --release
+
+    - name: Upload binary
+      uses: actions/upload-artifact@v3
+      with:
+        name: taskbuddy-aarch64
+        path: target/aarch64-unknown-linux-gnu/release/taskbuddy
