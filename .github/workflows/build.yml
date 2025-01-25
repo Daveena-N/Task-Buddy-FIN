@@ -1,52 +1,42 @@
-name: Build for Multiple Platforms
+name: Build for aarch64
 
 on:
   push:
     branches:
       - main
-  pull_request:
 
 jobs:
   build:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        target:
-          - aarch64-unknown-linux-gnu
-          - x86_64-unknown-linux-gnu
-          - x86_64-pc-windows-gnu
-          - x86_64-apple-darwin
-
     steps:
-    - name: Checkout Code
+    - name: Checkout code
       uses: actions/checkout@v3
 
-    - name: Install Rust
+    - name: Install dependencies
+      run: sudo apt-get update && sudo apt-get install -y gcc-aarch64-linux-gnu
+
+    - name: Set up Rust
       uses: actions-rs/toolchain@v1
       with:
         profile: minimal
         toolchain: stable
         override: true
 
-    - name: Add Target
-      run: rustup target add ${{ matrix.target }}
+    - name: Add aarch64 target
+      run: rustup target add aarch64-unknown-linux-gnu
 
-    - name: Install Cross-Compilation Tools
+    - name: Configure Cargo
       run: |
-        if [[ ${{ matrix.target }} == "aarch64-unknown-linux-gnu" ]]; then
-          sudo apt-get install gcc-aarch64-linux-gnu -y
-        elif [[ ${{ matrix.target }} == "x86_64-pc-windows-gnu" ]]; then
-          sudo apt-get install mingw-w64 -y
-        elif [[ ${{ matrix.target }} == "x86_64-apple-darwin" ]]; then
-          sudo apt-get install osxcross -y
-        fi
+        mkdir -p .cargo
+        echo '[target.aarch64-unknown-linux-gnu]' >> .cargo/config
+        echo 'linker = "aarch64-linux-gnu-gcc"' >> .cargo/config
 
-    - name: Build Binary
-      run: cargo build --target ${{ matrix.target }} --release
+    - name: Build for aarch64
+      run: cargo build --target aarch64-unknown-linux-gnu --release
 
-    - name: Upload Binary Artifact
+    - name: Upload binary
       uses: actions/upload-artifact@v3
       with:
-        name: ${{ matrix.target }}-binary
-        path: target/${{ matrix.target }}/release/taskbuddy
+        name: taskbuddy-aarch64
+        path: target/aarch64-unknown-linux-gnu/release/taskbuddy
